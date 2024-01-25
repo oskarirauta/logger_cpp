@@ -293,7 +293,7 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_parse() {
 						}
 					}
 				} else if ( t == "quiet" ) {
-					this._quiet = v == "true" ? true : false;
+					this -> _quiet = v == "true" ? true : false;
 				}
 
 				this -> _buf.erase(begin, end);

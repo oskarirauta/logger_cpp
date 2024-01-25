@@ -1,6 +1,8 @@
 # logger_cpp
 C++ application internal logging system
 
+[![C/C++ CI](https://github.com/oskarirauta/logger_cpp/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/oskarirauta/logger_cpp/actions/workflows/c-cpp.yml)
+
 Note: [logcpp](https://github.com/oskarirauta/logcpp) was renamed to logger_cpp.
 logcpp is archived and will no longer be updated. It exists because some other
 projects still are using it. Future development happens on logger_cpp repository.

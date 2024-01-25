@@ -187,7 +187,7 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 			e.tag = logger::_private::last.tag;
 			e.detail = "";
 
-			if ( !logger::silence && !this -> quiet && logger::log_level >= this -> _id )
+			if ( !logger::silence && !this -> _quiet && logger::log_level >= this -> _id )
 				*(logger::stream[this -> _stream]) << e << std::endl;
 		}
 
@@ -200,7 +200,7 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 		return *this;
 	}
 
-	if ( !logger::silence && !this -> quiet && logger::log_level >= this -> _id )
+	if ( !logger::silence && !this -> _quiet && logger::log_level >= this -> _id )
 		*(logger::stream[this -> _stream]) << e << std::endl;
 
 	logger::_private::last = e;

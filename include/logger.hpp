@@ -13,6 +13,7 @@
 #include "logger/tag.hpp"
 #include "logger/detail.hpp"
 #include "logger/padding.hpp"
+#include "logger/quiet.hpp"
 
 namespace logger {
 
@@ -47,6 +48,7 @@ namespace logger {
 			std::string _tag;
 			std::string _detail;
 			logger::padding _padding;
+			bool _quiet;
 
 			void _reset();
 			void _parse();
@@ -185,7 +187,7 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 			e.tag = logger::_private::last.tag;
 			e.detail = "";
 
-			if ( !logger::silence && logger::log_level >= this -> _id )
+			if ( !logger::silence && !this -> quiet && logger::log_level >= this -> _id )
 				*(logger::stream[this -> _stream]) << e << std::endl;
 		}
 
@@ -198,7 +200,7 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 		return *this;
 	}
 
-	if ( !logger::silence && logger::log_level >= this -> _id )
+	if ( !logger::silence && !this -> quiet && logger::log_level >= this -> _id )
 		*(logger::stream[this -> _stream]) << e << std::endl;
 
 	logger::_private::last = e;
@@ -216,6 +218,7 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_reset() {
 	this -> _tag.clear();
 	this -> _detail.clear();
 	this -> _padding.clear();
+	this -> _quiet = false;
 }
 
 template<typename Ch, typename Traits, typename Sequence>
@@ -289,6 +292,8 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_parse() {
 							}
 						}
 					}
+				} else if ( t == "quiet" ) {
+					this._quiet = v == "true" ? true : false;
 				}
 
 				this -> _buf.erase(begin, end);

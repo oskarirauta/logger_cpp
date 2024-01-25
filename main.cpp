@@ -56,6 +56,8 @@ int main(int argc, char **argv) {
 	logger::info << logger::tag("example") << "log entry with tag" << std::endl;
 	logger::info["tagged"] << "another entry with tag, but this time defined with subscript operator []" << std::endl;
 
+	logger::info << logger::quiet() << "this entry is quiet, it will though be stored in a filestream and history, but not to stream" << std::endl;
+
 	std::cout << "\nlog history(max 20 entries):" << std::endl;
 	std::vector<logger::entry> hist = logger::history(20);
 	for ( auto it = hist.begin(); it != hist.end(); ++it ) {

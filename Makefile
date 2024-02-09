@@ -21,4 +21,5 @@ example: $(COMMON_OBJS) $(LOGGER_OBJS) $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@;
 
 clean:
-	rm -f objs/*.o example
+	@rm -rf objs
+	@rm -f example

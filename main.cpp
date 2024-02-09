@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 	//logger::silence = true;
 
 	std::cout << "logger example" << std::endl;
-	std::cout << "default logging level is info(2), currently set logging level is " << logger::log_level << std::endl;
+	std::cout << "default logging level is info(3), logging level currently set is " << logger::loglevel() << std::endl;
 	std::cout << "this is cout outputting to standard output: test - now beginning to output tests to logging streams\n" << std::endl;
 
 	logger::info << std::string("log entry #1 to info level: item1") << std::endl;
@@ -27,6 +27,11 @@ int main(int argc, char **argv) {
 	logger::info << "info level: dup test" << logger::detail("extension for dup test") << std::endl;
 	logger::info << "info level: dup test" << std::endl;
 
+	logger::info << logger::unique() << "unique test, this get's printed every time, ignoring duplicate msg; unless quiet is used.." << std::endl;
+	logger::info << logger::unique() << "unique test, this get's printed every time, ignoring duplicate msg; unless quiet is used.." << std::endl;
+	logger::info << logger::quiet() << logger::unique() <<
+				"unique test, this get's printed every time, ignoring duplicate msg; unless quiet is used.." << std::endl;
+
 	logger::info << logger::padding(10) << logger::padding(4) << "entry with padding" << std::endl;
 	logger::info << logger::padding(10) << logger::padding() << "entry with padding cancelled" << std::endl;
 
@@ -44,7 +49,7 @@ int main(int argc, char **argv) {
 	logger::info << logger::detail("entry only without screen output") << std::endl;
 
 	// only message1 is accepted
-	std::cout << "adding \"message1\\nmessage2\\nmessage3 << std::endl to verbose level, only message1 is accepted (a caveat)" << std::endl;
+	std::cout << "adding \"message1\\nmessage2\\nmessage3 << std::endl to verbose level, line feeds are converted to spaces" << std::endl;
 	logger::verbose << "message1\nmessage2\nmessage3" << std::endl;
 	logger::vverbose << "this message is sent to vverbose facility, but displays as verbose" << std::endl;
 

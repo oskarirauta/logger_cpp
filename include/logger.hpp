@@ -14,6 +14,7 @@
 #include "logger/detail.hpp"
 #include "logger/padding.hpp"
 #include "logger/quiet.hpp"
+#include "logger/unique.hpp"
 
 namespace logger {
 
@@ -49,6 +50,7 @@ namespace logger {
 			std::string _detail;
 			logger::padding _padding;
 			bool _quiet;
+			bool _unique;
 
 			void _reset();
 			void _parse();
@@ -84,6 +86,7 @@ namespace logger {
 		extern std::mutex m;
 	}
 
+	int loglevel();
 	void loglevel(const logger::LOG_LEVEL& level);
 	const logger::entry last();
 	const logger::entry last(const logger::LOG_LEVEL& level);
@@ -164,7 +167,7 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 
 	const std::lock_guard<std::mutex> lock(logger::_private::m);
 
-	if ( !logger::_private::store.empty() && logger::_private::last == e ) {
+	if ( !this -> _unique && !logger::_private::store.empty() && logger::_private::last == e ) {
 
 		if ( logger::_private::store.back() == e ) {
 
@@ -219,6 +222,7 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_reset() {
 	this -> _detail.clear();
 	this -> _padding.clear();
 	this -> _quiet = false;
+	this -> _unique = false;
 }
 
 template<typename Ch, typename Traits, typename Sequence>
@@ -294,6 +298,8 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_parse() {
 					}
 				} else if ( t == "quiet" ) {
 					this -> _quiet = v == "true" ? true : false;
+				} else if ( t == "unique" ) {
+					this -> _unique = v == "true" ? true : false;
 				}
 
 				this -> _buf.erase(begin, end);

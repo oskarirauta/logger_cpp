@@ -11,7 +11,7 @@ bool logger::silence = false;
 bool logger::use_timestamps = false;
 std::string logger::prefix;
 size_t logger::max_log_entries = 100;
-uint8_t logger::log_level = 2; // default to info level
+uint8_t logger::log_level = 3; // default to info level
 
 logger::entry logger::_private::last;
 std::vector<logger::entry> logger::_private::store;
@@ -90,6 +90,11 @@ const std::vector<logger::entry> logger::history(size_t count, const logger::LOG
 		_store.push_back(*itl);
 
 	return _store;
+}
+
+int logger::loglevel() {
+
+	return (int)logger::log_level;
 }
 
 void logger::loglevel(const logger::LOG_LEVEL& level) {

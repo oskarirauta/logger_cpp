@@ -110,14 +110,24 @@ template<typename Ch, typename Traits, typename Sequence>
 logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_flush() {
 
 	if ( !this -> _tag.empty()) {
+		#if __cplusplus >= 202002L
 		std::erase_if(this -> _tag, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
+		#else
+		this -> _tag.erase(std::remove_if(this -> _tag.begin(), this -> _tag.end(),
+			[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), this -> _tag.end());
+		#endif
 		std::replace_if(this -> _tag.begin(), this -> _tag.end(),
 			[](char ch) { return std::string("\n\t").find(ch) != std::string::npos; }, ' ');
 		this -> _tag = common::trim_ws(this -> _tag);
 	}
 
 	if ( !this -> _detail.empty()) {
+		#if __cplusplus >= 202002L
 		std::erase_if(this -> _tag, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
+		#else
+		this -> _tag.erase(std::remove_if(this -> _tag.begin(), this -> _tag.end(),
+			[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), this -> _tag.end());
+		#endif
 		std::replace_if(this -> _tag.begin(), this -> _tag.end(),
 			[](char ch) { return std::string("\n\t").find(ch) != std::string::npos; }, ' ');
 		this -> _detail = common::trim_ws(this -> _tag);
@@ -254,7 +264,12 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_parse() {
 					int w = 0;
 					bool error = false;
 
+					#if __cplusplus >= 202002L
 					std::erase_if(s, [](char ch) { return std::string("\r\n\t\v ").find(ch) != std::string::npos; });
+					#else
+					s.erase(std::remove_if(s.begin(), s.end(),
+						[](char ch) { return std::string("\r\n\t\v ").find(ch) != std::string::npos; }), s.end());
+					#endif
 
 					if ( auto p_sep = std::find_if(s.begin(), s.end(), [](Ch c) { return c == ','; }); p_sep != s.end()) {
 
@@ -308,7 +323,12 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_parse() {
 		}
 	}
 
+	#if __cplusplus >= 202002L
 	std::erase_if(this -> _buf, [](char ch) { return ch == 2 || ch == 3; });
+	#else
+	this -> _buf.erase(std::remove_if(this -> _buf.begin(), this -> _buf.end(),
+		[](char ch) { return ch == 2 || ch == 3; }), this -> _buf.end());
+	#endif
 }
 
 template<typename Ch, typename Traits, typename Sequence>
@@ -317,7 +337,12 @@ int logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_sync() {
 	if ( !this -> _buf.empty() && this -> _buf.back() == '\n' )
 		this -> _buf.pop_back();
 
+	#if __cplusplus >= 202002L
 	std::erase_if(this -> _buf, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
+	#else
+	this -> _buf.erase(std::remove_if(this -> _buf.begin(), this -> _buf.end(),
+		[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), this -> _buf.end());
+	#endif
 	std::replace_if(this -> _buf.begin(), this -> _buf.end(),
 		[](char ch) { return std::string("\n\t").find(ch) != std::string::npos; }, ' ');
 
@@ -335,7 +360,7 @@ int logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_sync() {
 }
 
 template<typename Ch, typename Traits, typename Sequence>
-logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::int_type logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_overflow(int_type ch) {
+typename logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::int_type logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_overflow(int_type ch) {
 
 	if ( traits_type::eq_int_type(ch, traits_type::eof()))
 		return traits_type::eof();

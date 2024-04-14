@@ -1,5 +1,5 @@
-LOGGER_DIR?=logger
-INCLUDES += -I./$(LOGGER_DIR)/include
+LOGGER_DIR?=./logger
+INCLUDES += -I$(LOGGER_DIR)/include
 
 LOGGER_OBJS:= \
 	objs/logger_tag.o \

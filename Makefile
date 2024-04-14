@@ -1,7 +1,7 @@
 all: world
+
 CXX?=g++
-CXXFLAGS?=--std=c++17 -Wall
-INCLUDES:=-I./include -I.
+CXXFLAGS?=--std=c++17 -Wall -fPIC
 
 OBJS:= \
 	objs/main.o

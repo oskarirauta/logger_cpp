@@ -1,16 +1,26 @@
-# logger_cpp
-C++ application internal logging system
+[![License:MIT](https://img.shields.io/badge/License-MIT-blue?style=plastic)](LICENSE)
+[![C++ CI build](../../actions/workflows/build.yml/badge.svg)](../../actions/workflows/build.yml)
+### logger_cpp
+C++ logging system library for application's internal use
 
-[![C++ CI build](https://github.com/oskarirauta/logger_cpp/actions/workflows/build.yml/badge.svg)](https://github.com/oskarirauta/logger_cpp/actions/workflows/build.yml)
-
-Note: [logcpp](https://github.com/oskarirauta/logcpp) was renamed to logger_cpp.
+### <sub>Note</sub>
+[logcpp](https://github.com/oskarirauta/logcpp) was renamed to logger_cpp.
 logcpp is archived and will no longer be updated. It exists because some other
-projects still are using it. Future development happens on logger_cpp repository.
+projects still are using it. Future development happens now on logger_cpp repository.
 
+logger_cpp is a system that uses streams for logging, similarly as
 logger_cpp is a system that can be used to log similarly
-as ```std::cout <<``` would be used but with log levels.
-Designed for background service applications mainly to provide a bit
-more extensive logging facility than just using std::cout
+```std::cout <<``` would be used but with log levels and some other options.
+
+### <sub>Note</sub>
+This does not log to syslog, it is more a log system for storing log messages
+and outputting them to screen, depending on your system, when executed from
+init - propably entries will log to syslog as well as output of program
+might be directed there. Standard output is used for logging, unless log level
+used is error - when output goes to cerr. This behaviour is default and can
+be modified.
+
+## <sub>Some features</sub>
 
  - possibility to select logging level or make it completely silent
  - possibility to output log to file
@@ -21,12 +31,11 @@ more extensive logging facility than just using std::cout
  - tag log entries
  - add detail description for entry (no screen output, only on a journal entry)
 
-### Log Entry
-
+### <sub>Log Entry</sub>
+Example of making log entry with logger:
 ```logger::info << "log this line to info level" << std::endl;```
 
-### Tag entries
-
+### <sub>Tag entries</sub>
 You can either use
 
 ```logger::info << logger::tag("my_tag") << "tagged message" << std::endl;```
@@ -35,14 +44,12 @@ or, you can use a subscript operator[] instead (v2 feature)
 
 ```logger::info["my_tag"] << "tagged message" << std::endl;```
 
-### Entry's detail description
-
+### <sub>Entry's detail description</sub>
 Add detail description to log entry:
 
 ```logger::info << "message title" << logger::detail("message detail description") << std::endl;```
 
-### Custom log levels
-
+### <sub>Custom log levels</sub>
 Adding custom log levels is supported, just create them like this:
 
 ```logger::LOG_LEVEL my_level("my", 10, logger::std_out);```
@@ -55,13 +62,11 @@ You can always change ids, for example like this:
 
 ```logger::info.change_logging_level(10);```
 
-### Trimming
-
+### <sub>Trimming</sub>
 log entries are trimmed, line feeds and tabs ( \n and \t ) are converted to spaces,
 and \r \v will be erased from tags, details and messages.
 
-### Default log levels
-
+### <sub>Default log levels</sub>
  - error
  - warning
  - notice
@@ -73,12 +78,13 @@ and \r \v will be erased from tags, details and messages.
 when you set your log level, it always enables level's with higher priorites, meaning
 that if you set log level to info, also error, warning and notice are enabled.
 
-### Depencies
+## <sub>Depencies</sub>
 
 Library depends on my [common_cpp](https://github.com/oskarirauta/common_cpp) library
 which contains some generally used functions.
 
-### Importing
+## <sub>Importing</sub>
+
  - import common_cpp as a submodule to common
  - import logger_cpp as a submodule to logger
  - include common_cpp's Makefile.inc and logger_cpp's Makefile.inc in your Makefile
@@ -91,10 +97,6 @@ Remember to clone with recursive submodules, using --recursive-submodules argume
 Note: with default build system, you need objs directory in your project's root, this is path
 where object files are built.
 
-### Example
+## <sub>Example</sub>
 
 Sample code is provided.
-
-### Other
-
-MIT-license

@@ -28,6 +28,10 @@ namespace logger {
 	extern std::string prefix;
 	extern size_t max_log_entries;
 	extern uint8_t log_level;
+	// Level gate for file_stream. Defaults to 255 (everything), preserving the
+	// historical behaviour; an application can lower it so the log FILE follows a
+	// configured level instead of unconditionally receiving every entry.
+	extern uint8_t file_log_level;
 
 	template<typename Ch, typename Traits = std::char_traits<Ch>,
 		typename Sequence = std::vector<Ch> >
@@ -169,7 +173,7 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 	if ( e.name.empty() || e.msg.empty())
 		return *this;
 
-	if ( logger::file_stream != nullptr ) {
+	if ( logger::file_stream != nullptr && logger::file_log_level >= this -> _id ) {
 		*(logger::file_stream) << e << std::endl;
 		if ( !e.detail.empty())
 			*(logger::file_stream) << e.detail_spacing() << e.detail << std::endl;

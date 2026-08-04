@@ -12,6 +12,7 @@ bool logger::use_timestamps = false;
 std::string logger::prefix;
 size_t logger::max_log_entries = 100;
 uint8_t logger::log_level = 3; // default to info level
+uint8_t logger::file_log_level = 255; // file gets everything unless the app lowers it
 
 logger::entry logger::_private::last;
 std::vector<logger::entry> logger::_private::store;

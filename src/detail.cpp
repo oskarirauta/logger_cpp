@@ -1,10 +1,5 @@
 #include "logger/detail.hpp"
 
-bool logger::detail::operator ==(const logger::detail& other) {
-
-        return this -> txt == other.txt;
-}
-
 bool logger::detail::operator ==(const logger::detail& other) const {
 
         return this -> txt == other.txt;

@@ -1,10 +1,5 @@
 #include "logger/padding.hpp"
 
-bool logger::padding::operator ==(const logger::padding& other) {
-
-        return this -> count == other.count && this -> width == other.width;
-}
-
 bool logger::padding::operator ==(const logger::padding& other) const {
 
         return this -> count == other.count && this -> width == other.width;

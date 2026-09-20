@@ -9,7 +9,6 @@ namespace logger {
 			bool state;
 			unique(bool b = true) : state(b) {}
 
-			bool operator ==(const unique& other);
 			bool operator ==(const unique& other) const;
 			operator std::string() const;
 

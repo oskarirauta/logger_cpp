@@ -9,7 +9,6 @@ namespace logger {
 			std::string txt;
 			detail(const std::string& s) : txt(s) {}
 
-			bool operator ==(const detail& other);
 			bool operator ==(const detail& other) const;
 			operator std::string() const;
 

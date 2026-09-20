@@ -20,7 +20,6 @@ namespace logger {
 		std::string detail;
 		int count = 0;
 
-		bool operator ==(const entry& other);
 		bool operator ==(const entry& other) const;
 		operator std::string() const;
 

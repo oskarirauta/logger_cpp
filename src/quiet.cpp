@@ -1,10 +1,5 @@
 #include "logger/quiet.hpp"
 
-bool logger::quiet::operator ==(const logger::quiet& other) {
-
-	return this -> state == other.state;
-}
-
 bool logger::quiet::operator ==(const logger::quiet& other) const {
 
         return this -> state == other.state;

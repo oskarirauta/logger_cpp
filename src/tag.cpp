@@ -1,10 +1,5 @@
 #include "logger/tag.hpp"
 
-bool logger::tag::operator ==(const logger::tag& other) {
-
-        return this -> name == other.name;
-}
-
 bool logger::tag::operator ==(const logger::tag& other) const {
 
         return this -> name == other.name;

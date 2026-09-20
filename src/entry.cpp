@@ -14,12 +14,6 @@ bool logger::entry::has_tag() const {
 	return !this -> tag.empty();
 }
 
-bool logger::entry::operator ==(const logger::entry& other) {
-
-	return this -> id == other.id &&
-		common::to_lower(std::as_const(this -> msg)) == common::to_lower(std::as_const(other.msg));
-}
-
 bool logger::entry::operator ==(const logger::entry& other) const {
 
 	return this -> id == other.id &&

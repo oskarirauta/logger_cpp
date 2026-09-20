@@ -1,10 +1,5 @@
 #include "logger/unique.hpp"
 
-bool logger::unique::operator ==(const logger::unique& other) {
-
-	return this -> state == other.state;
-}
-
 bool logger::unique::operator ==(const logger::unique& other) const {
 
         return this -> state == other.state;

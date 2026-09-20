@@ -40,6 +40,7 @@ const logger::entry logger::last(const logger::LOG_LEVEL& level) {
 
 const std::vector<logger::entry> logger::history(size_t count) {
 
+	const std::lock_guard<std::mutex> lock(logger::_private::m);
 	std::vector<logger::entry> _store;
 
 	if ( logger::_private::store.empty())
@@ -64,6 +65,7 @@ const std::vector<logger::entry> logger::history(size_t count) {
 
 const std::vector<logger::entry> logger::history(size_t count, const logger::LOG_LEVEL& level) {
 
+	const std::lock_guard<std::mutex> lock(logger::_private::m);
 	std::vector<logger::entry> _filtered;
 
 	while ( logger::_private::store.size() >= logger::max_log_entries + 1 )

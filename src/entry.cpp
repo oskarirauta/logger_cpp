@@ -33,9 +33,14 @@ logger::entry::operator std::string() const {
 
 const std::string logger::entry::get_timestamp() const {
 
-	auto ts = this -> timestamp_last.count();
-	std::string s = common::trim_ws(ctime(&ts));
-	return s;
+	time_t ts = static_cast<time_t>(this -> timestamp_last.count());
+	char buf[32] = {0};
+#if defined(_WIN32)
+	ctime_s(buf, sizeof(buf), &ts);
+#else
+	ctime_r(&ts, buf);
+#endif
+	return common::trim_ws(buf);
 }
 
 const std::string logger::entry::detail_title() const {

@@ -49,23 +49,32 @@ namespace logger {
 
 		protected:
 
-			Sequence _buf;
-			std::string _tag;
-			std::string _detail;
-			logger::padding _padding;
-			bool _quiet;
-			bool _unique;
+			struct buffer_context {
+				Sequence _buf;
+				std::string _tag;
+				std::string _detail;
+				logger::padding _padding;
+				bool _quiet = false;
+				bool _unique = false;
+			};
+
+			static buffer_context& _ctx(const void* self) {
+				static thread_local std::map<const void*, buffer_context> contexts;
+				return contexts[self];
+			}
 
 			void _reset();
 			void _parse();
 			int _sync();
 			int_type _overflow(int_type ch);
+			std::streamsize _xsputn(const Ch* s, std::streamsize count);
 
 			virtual int sync() override { return this -> _sync(); }
+			virtual std::streamsize xsputn(const Ch* s, std::streamsize count) override { return this -> _xsputn(s, count); }
 
 		public:
 
-			virtual int_type overflow(int_type ch) { return this -> _overflow(ch); }
+			virtual int_type overflow(int_type ch) override { return this -> _overflow(ch); }
 			const std::string name() const;
 			uint8_t id() const;
 			STREAM stream() const;
@@ -113,36 +122,38 @@ namespace logger {
 template<typename Ch, typename Traits, typename Sequence>
 logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_flush() {
 
-	if ( !this -> _tag.empty()) {
+	auto& ctx = _ctx(this);
+
+	if ( !ctx._tag.empty()) {
 		#if __cplusplus >= 202002L
-		std::erase_if(this -> _tag, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
+		std::erase_if(ctx._tag, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
 		#else
-		this -> _tag.erase(std::remove_if(this -> _tag.begin(), this -> _tag.end(),
-			[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), this -> _tag.end());
+		ctx._tag.erase(std::remove_if(ctx._tag.begin(), ctx._tag.end(),
+			[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), ctx._tag.end());
 		#endif
-		std::replace_if(this -> _tag.begin(), this -> _tag.end(),
+		std::replace_if(ctx._tag.begin(), ctx._tag.end(),
 			[](char ch) { return std::string("\n\t").find(ch) != std::string::npos; }, ' ');
-		this -> _tag = common::trim_ws(this -> _tag);
+		ctx._tag = common::trim_ws(ctx._tag);
 	}
 
-	if ( !this -> _detail.empty()) {
+	if ( !ctx._detail.empty()) {
 		#if __cplusplus >= 202002L
-		std::erase_if(this -> _tag, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
+		std::erase_if(ctx._detail, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
 		#else
-		this -> _tag.erase(std::remove_if(this -> _tag.begin(), this -> _tag.end(),
-			[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), this -> _tag.end());
+		ctx._detail.erase(std::remove_if(ctx._detail.begin(), ctx._detail.end(),
+			[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), ctx._detail.end());
 		#endif
-		std::replace_if(this -> _tag.begin(), this -> _tag.end(),
+		std::replace_if(ctx._detail.begin(), ctx._detail.end(),
 			[](char ch) { return std::string("\n\t").find(ch) != std::string::npos; }, ' ');
-		this -> _detail = common::trim_ws(this -> _tag);
+		ctx._detail = common::trim_ws(ctx._detail);
 	}
 
 	logger::entry e = {
 		.name = this -> _name,
 		.id = this -> _id,
-		.msg = common::trim_ws(std::string(this -> _buf.begin(), this -> _buf.end())),
-		.tag = this -> _tag,
-		.detail = this -> _detail,
+		.msg = common::trim_ws(std::string(ctx._buf.begin(), ctx._buf.end())),
+		.tag = ctx._tag,
+		.detail = ctx._detail,
 		.count = 1
 	};
 
@@ -153,11 +164,11 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 			e.msg.erase(0, 1);
 	}
 
-	if ( !e.msg.empty() && !this -> _padding.empty()) {
+	if ( !e.msg.empty() && !ctx._padding.empty()) {
 
 		std::string new_msg;
 		new_msg += char(001);
-		for ( size_t i = 0; i < this -> _padding.width * this -> _padding.count; i++ )
+		for ( size_t i = 0; i < ctx._padding.width * ctx._padding.count; i++ )
 			new_msg += ' ';
 		e.msg = new_msg + e.msg;
 	}
@@ -173,23 +184,23 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 	if ( e.name.empty() || e.msg.empty())
 		return *this;
 
+	const std::lock_guard<std::mutex> lock(logger::_private::m);
+
 	if ( logger::file_stream != nullptr && logger::file_log_level >= this -> _id ) {
 		*(logger::file_stream) << e << std::endl;
 		if ( !e.detail.empty())
 			*(logger::file_stream) << e.detail_spacing() << e.detail << std::endl;
 	}
 
-	const std::lock_guard<std::mutex> lock(logger::_private::m);
-
-	if ( !this -> _unique && !logger::_private::store.empty() && logger::_private::last == e ) {
+	if ( !ctx._unique && !logger::_private::store.empty() && logger::_private::last == e ) {
 
 		if ( logger::_private::store.back() == e ) {
 
-			if ( !logger::_private::store.back().has_tag() && !this -> _tag.empty())
-				logger::_private::store.back().tag = this -> _tag;
+			if ( !logger::_private::store.back().has_tag() && !ctx._tag.empty())
+				logger::_private::store.back().tag = ctx._tag;
 
-			if ( !logger::_private::store.back().has_detail() && !this -> _detail.empty())
-				logger::_private::store.back().detail = this -> _detail;
+			if ( !logger::_private::store.back().has_detail() && !ctx._detail.empty())
+				logger::_private::store.back().detail = ctx._detail;
 
 		}
 
@@ -204,7 +215,7 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 			e.tag = logger::_private::last.tag;
 			e.detail = "";
 
-			if ( !logger::silence && !this -> _quiet && logger::log_level >= this -> _id )
+			if ( !logger::silence && !ctx._quiet && logger::log_level >= this -> _id )
 				*(logger::stream[this -> _stream]) << e << std::endl;
 		}
 
@@ -217,7 +228,7 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 		return *this;
 	}
 
-	if ( !logger::silence && !this -> _quiet && logger::log_level >= this -> _id )
+	if ( !logger::silence && !ctx._quiet && logger::log_level >= this -> _id )
 		*(logger::stream[this -> _stream]) << e << std::endl;
 
 	logger::_private::last = e;
@@ -231,22 +242,25 @@ logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Trait
 
 template<typename Ch, typename Traits, typename Sequence>
 void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_reset() {
-	this -> _buf.clear();
-	this -> _tag.clear();
-	this -> _detail.clear();
-	this -> _padding.clear();
-	this -> _quiet = false;
-	this -> _unique = false;
+	auto& ctx = _ctx(this);
+	ctx._buf.clear();
+	ctx._tag.clear();
+	ctx._detail.clear();
+	ctx._padding.clear();
+	ctx._quiet = false;
+	ctx._unique = false;
 }
 
 template<typename Ch, typename Traits, typename Sequence>
 void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_parse() {
 
+	auto& ctx = _ctx(this);
+
 	begin_parse:
 
-	if ( auto begin = std::find_if(this -> _buf.begin(), this -> _buf.end(), [](Ch c) { return c == 0002; }); begin != this -> _buf.end()) {
-		if ( auto end = std::find_if(begin, this -> _buf.end(), [](Ch c) { return c == 0003; }); end != this -> _buf.end()) {
-			if ( auto sep = std::find_if(begin, end, [](Ch c) { return c == ':'; }); sep != _buf.end()) {
+	if ( auto begin = std::find_if(ctx._buf.begin(), ctx._buf.end(), [](Ch c) { return c == 0002; }); begin != ctx._buf.end()) {
+		if ( auto end = std::find_if(begin, ctx._buf.end(), [](Ch c) { return c == 0003; }); end != ctx._buf.end()) {
+			if ( auto sep = std::find_if(begin, end, [](Ch c) { return c == ':'; }); sep != ctx._buf.end()) {
 
 				std::string t(begin, sep);
 				std::string v(sep, end);
@@ -258,9 +272,9 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_parse() {
 					v.pop_back();
 
 				if ( t == "tag" )
-					this -> _tag = common::trim_ws(v);
+					ctx._tag = common::trim_ws(v);
 				else if ( t == "detail" )
-					this -> _detail = common::trim_ws(v);
+					ctx._detail = common::trim_ws(v);
 				else if ( t == "padding" ) {
 
 					std::string s = common::trim_ws(v);
@@ -309,51 +323,53 @@ void logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_parse() {
 							if ( !error ) {
 
 								if ( c == 0 || w == 0 )
-									this -> _padding = logger::padding(0, 0);
+									ctx._padding = logger::padding(0, 0);
 								else
-									this -> _padding = logger::padding((size_t)c, (size_t)w);
+									ctx._padding = logger::padding((size_t)c, (size_t)w);
 							}
 						}
 					}
 				} else if ( t == "quiet" ) {
-					this -> _quiet = v == "true" ? true : false;
+					ctx._quiet = v == "true" ? true : false;
 				} else if ( t == "unique" ) {
-					this -> _unique = v == "true" ? true : false;
+					ctx._unique = v == "true" ? true : false;
 				}
 
-				this -> _buf.erase(begin, end);
+				ctx._buf.erase(begin, end);
 				goto begin_parse;
 			}
 		}
 	}
 
 	#if __cplusplus >= 202002L
-	std::erase_if(this -> _buf, [](char ch) { return ch == 2 || ch == 3; });
+	std::erase_if(ctx._buf, [](char ch) { return ch == 2 || ch == 3; });
 	#else
-	this -> _buf.erase(std::remove_if(this -> _buf.begin(), this -> _buf.end(),
-		[](char ch) { return ch == 2 || ch == 3; }), this -> _buf.end());
+	ctx._buf.erase(std::remove_if(ctx._buf.begin(), ctx._buf.end(),
+		[](char ch) { return ch == 2 || ch == 3; }), ctx._buf.end());
 	#endif
 }
 
 template<typename Ch, typename Traits, typename Sequence>
 int logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_sync() {
 
-	if ( !this -> _buf.empty() && this -> _buf.back() == '\n' )
-		this -> _buf.pop_back();
+	auto& ctx = _ctx(this);
+
+	if ( !ctx._buf.empty() && ctx._buf.back() == '\n' )
+		ctx._buf.pop_back();
 
 	#if __cplusplus >= 202002L
-	std::erase_if(this -> _buf, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
+	std::erase_if(ctx._buf, [](char ch) { return std::string("\r\v").find(ch) != std::string::npos; });
 	#else
-	this -> _buf.erase(std::remove_if(this -> _buf.begin(), this -> _buf.end(),
-		[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), this -> _buf.end());
+	ctx._buf.erase(std::remove_if(ctx._buf.begin(), ctx._buf.end(),
+		[](char ch) { return std::string("\r\v").find(ch) != std::string::npos; }), ctx._buf.end());
 	#endif
-	std::replace_if(this -> _buf.begin(), this -> _buf.end(),
+	std::replace_if(ctx._buf.begin(), ctx._buf.end(),
 		[](char ch) { return std::string("\n\t").find(ch) != std::string::npos; }, ' ');
 
-	if ( this -> _buf.size() != 0 )
+	if ( ctx._buf.size() != 0 )
 		this -> _parse();
 
-	if ( this -> _buf.size() == 0 ) {
+	if ( ctx._buf.size() == 0 ) {
 		this -> _reset();
 		return -1;
 	}
@@ -369,13 +385,25 @@ typename logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::int_type logger::basic_L
 	if ( traits_type::eq_int_type(ch, traits_type::eof()))
 		return traits_type::eof();
 
-	this -> _buf.push_back(traits_type::to_char_type(ch));
+	auto& ctx = _ctx(this);
+	ctx._buf.push_back(traits_type::to_char_type(ch));
 	return ch;
 }
 
 template<typename Ch, typename Traits, typename Sequence>
+std::streamsize logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::_xsputn(const Ch* s, std::streamsize count) {
+
+	if ( count > 0 && s != nullptr ) {
+		auto& ctx = _ctx(this);
+		ctx._buf.insert(ctx._buf.end(), s, s + count);
+	}
+	return count;
+}
+
+template<typename Ch, typename Traits, typename Sequence>
 logger::basic_LOG_LEVEL<Ch, Traits, Sequence>& logger::basic_LOG_LEVEL<Ch, Traits, Sequence>::operator [](const std::string& t) {
-	this -> _tag = common::trim_ws(t);
+	auto& ctx = _ctx(this);
+	ctx._tag = common::trim_ws(t);
 	return *this;
 }
 
